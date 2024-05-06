@@ -30905,6 +30905,21 @@
     var mathCeil = Math.ceil;
     var mathPow$1 = Math.pow;
     var mathLog = Math.log;
+    /**
+     * symmetric log, allowing negative values for logarithmic scales
+     */
+    function symMathLog(x) {
+      if (x === 0) {
+        return 0;
+      }
+      return x > 0 ? mathLog(x) : -mathLog(-x);
+    }
+    /**
+     * symmetric pow, allowing negative values for logarithmic scales
+     */
+    function symMathPow(x, y) {
+      return y >= 0 ? mathPow$1(x, y) : -mathPow$1(x, -y);
+    }
     var LogScale = /** @class */function (_super) {
       __extends(LogScale, _super);
       function LogScale() {
@@ -30926,7 +30941,7 @@
         var ticks = intervalScaleProto.getTicks.call(this, expandToNicedExtent);
         return map(ticks, function (tick) {
           var val = tick.value;
-          var powVal = round(mathPow$1(this.base, val));
+          var powVal = round(symMathPow(this.base, val));
           // Fix #4158
           powVal = val === extent[0] && this._fixMin ? fixRoundingError(powVal, originalExtent[0]) : powVal;
           powVal = val === extent[1] && this._fixMax ? fixRoundingError(powVal, originalExtent[1]) : powVal;
@@ -30937,9 +30952,8 @@
       };
       LogScale.prototype.setExtent = function (start, end) {
         var base = mathLog(this.base);
-        // log(-Infinity) is NaN, so safe guard here
-        start = mathLog(Math.max(0, start)) / base;
-        end = mathLog(Math.max(0, end)) / base;
+        start = symMathLog(start) / base;
+        end = symMathLog(end) / base;
         intervalScaleProto.setExtent.call(this, start, end);
       };
       /**
@@ -30948,8 +30962,8 @@
       LogScale.prototype.getExtent = function () {
         var base = this.base;
         var extent = scaleProto.getExtent.call(this);
-        extent[0] = mathPow$1(base, extent[0]);
-        extent[1] = mathPow$1(base, extent[1]);
+        extent[0] = symMathPow(base, extent[0]);
+        extent[1] = symMathPow(base, extent[1]);
         // Fix #4158
         var originalScale = this._originalScale;
         var originalExtent = originalScale.getExtent();
@@ -30960,8 +30974,8 @@
       LogScale.prototype.unionExtent = function (extent) {
         this._originalScale.unionExtent(extent);
         var base = this.base;
-        extent[0] = mathLog(extent[0]) / mathLog(base);
-        extent[1] = mathLog(extent[1]) / mathLog(base);
+        extent[0] = symMathLog(extent[0]) / mathLog(base);
+        extent[1] = symMathLog(extent[1]) / mathLog(base);
         scaleProto.unionExtent.call(this, extent);
       };
       LogScale.prototype.unionExtentFromData = function (data, dim) {
@@ -31003,16 +31017,16 @@
         return val;
       };
       LogScale.prototype.contain = function (val) {
-        val = mathLog(val) / mathLog(this.base);
+        val = symMathLog(val) / mathLog(this.base);
         return contain$1(val, this._extent);
       };
       LogScale.prototype.normalize = function (val) {
-        val = mathLog(val) / mathLog(this.base);
+        val = symMathLog(val) / mathLog(this.base);
         return normalize$1(val, this._extent);
       };
       LogScale.prototype.scale = function (val) {
         val = scale$2(val, this._extent);
-        return mathPow$1(this.base, val);
+        return symMathPow(this.base, val);
       };
       LogScale.type = 'log';
       return LogScale;
